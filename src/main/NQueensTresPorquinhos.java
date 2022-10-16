@@ -1,5 +1,9 @@
 package main;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Arrays;
+
 public class NQueensTresPorquinhos {
 
     /*
@@ -21,16 +25,24 @@ public class NQueensTresPorquinhos {
      */
 
     public static void main(String[] args) {
+
+        Instant before = Instant.now();
         System.out.println(new NQueensTresPorquinhos().run(args));
+        Instant after = Instant.now();
+        long delta = Duration.between(before, after).toSeconds();
+        System.out.println("tempo: " + delta);
     }
 
     private long run(String[] args) {
+
         char[][] tabuleiro = novoTabuleiro(Integer.parseInt(args[0]));
 
-        int p = Integer.parseInt(args[1]);
-        int g = Integer.parseInt(args[2]);
+        int min = Math.min(Integer.parseInt(args[1]), Integer.parseInt(args[2]));
+        int max = Math.max(Integer.parseInt(args[1]), Integer.parseInt(args[2]));
+        int p = min;
+        int g = max;
 
-        printTabuleiro(tabuleiro);
+        //printTabuleiro(tabuleiro);
 
         return posicionarPorquinhos(p, g, tabuleiro, 0, 0, 0);
     }
@@ -39,15 +51,20 @@ public class NQueensTresPorquinhos {
      * Aloca os porquinhos no tabuleiro de forma recursiva, tentando todas as possibilidades.
      * Toda vez que conseguir posicionar todos os porquinhos, tenta posicionar as galinhas.
      * Se conseguir posicionar todas as galinhas, incrementa o número de soluções.
+     * <p>
+     * Ao chamar recursivamente, busca a próxima posição a partir da posição atual, sem voltar ao início.
      *
      * @param p              número de porquinhos a serem posicionados
      * @param g              número de galinhas a serem posicionadas
      * @param tabuleiro      tabuleiro onde os porquinhos e galinhas serão posicionados
      * @param numeroSolucoes número de soluções válidas encontradas até o momento
+     * @param linha          linha atual
+     * @param coluna         coluna atual
      */
     private long posicionarPorquinhos(int p, int g, char[][] tabuleiro, long numeroSolucoes, int linha, int coluna) {
         if (p == 0) {
-            return posicionarGalinhas(g, tabuleiro, numeroSolucoes, 0, 0);
+            char[][] posicoes = posicoesLivres(tabuleiro);
+            return posicionarGalinhas(g, tabuleiro, numeroSolucoes, posicoes, 0, 0);
         }
 
         for (int i = linha; i < tabuleiro.length; i++) {
@@ -63,49 +80,66 @@ public class NQueensTresPorquinhos {
         return numeroSolucoes;
     }
 
-    private boolean podeColocarGalinha(char[][] tabuleiro, int linha, int coluna) {
-        if (tabuleiro[linha][coluna] == 'P' || tabuleiro[linha][coluna] == 'G') return false;
+    private char[][] posicoesLivres(char[][] tabuleiro) {
+        var posicoes = new char[tabuleiro.length][tabuleiro.length];
 
-        // confere na linha e coluna
-        for (int i = 0; i < tabuleiro.length; i++) {
-            if (tabuleiro[i][coluna] == 'P') return false;
-            if (tabuleiro[linha][i] == 'P') return false;
+        for (int i = 0; i < posicoes.length; i++) {
+            for (int j = 0; j < posicoes.length; j++) {
+                if (tabuleiro[i][j] == 'P') {
+                    // preenche posicao
+                    posicoes[i][j] = 'X';
+
+                    //preenche linha
+                    Arrays.fill(posicoes[i], 'X');
+
+                    //preenche coluna
+                    for (int k = 0; k < posicoes.length; k++) {
+                        posicoes[k][j] = 'X';
+                    }
+
+                    if (i == j) {
+                        //preenche diagonal principal
+                        for (int k = 0; k < posicoes.length; k++) {
+                            posicoes[k][k] = 'X';
+                        }
+
+                        // preenche diagonal secundária
+                        int diff = Math.min(i, posicoes.length - 1 - j);
+                        for (int k = j + diff, l = i - diff; k >= 0 && l <= posicoes.length - 1; k--, l++) {
+                            posicoes[l][k] = 'X';
+                        }
+                    } else {
+                        // preenche diagonal principal offset
+                        int diff = Math.min(i, j);
+                        for (int k = j - diff, l = i - diff; k <= posicoes.length - 1 && l <= posicoes.length - 1; k++, l++) {
+                            posicoes[l][k] = 'X';
+                        }
+                        // preenche diagonal secundária offset
+                        diff = Math.min(i, posicoes.length - 1 - j);
+                        for (int k = j + diff, l = i - diff; k >= 0 && l <= posicoes.length - 1; k--, l++) {
+                            posicoes[l][k] = 'X';
+                        }
+                    }
+                }
+            }
         }
-
-        // diagonal superior esquerda
-        for (int i = linha, j = coluna; i >= 0 && j >= 0; i--, j--) {
-            if (tabuleiro[i][j] == 'P') return false;
-        }
-
-        // diagonal inferior esquerda
-        for (int i = linha, j = coluna; j >= 0 && i < tabuleiro.length; i++, j--) {
-            if (tabuleiro[i][j] == 'P') return false;
-        }
-
-        // diagonal superior direita
-        for (int i = linha, j = coluna; i >= 0 && j < tabuleiro.length; i--, j++) {
-            if (tabuleiro[i][j] == 'P') return false;
-        }
-
-        // diagonal inferior direita
-        for (int i = linha, j = coluna; i < tabuleiro.length && j < tabuleiro.length; i++, j++) {
-            if (tabuleiro[i][j] == 'P') return false;
-        }
-
-        return true;
+        //printTabuleiro(posicoes);
+        return posicoes;
     }
 
-    private long posicionarGalinhas(int g, char[][] tabuleiro, long numeroSolucoes, int linha, int coluna) {
+    private long posicionarGalinhas(int g, char[][] tabuleiro, long numeroSolucoes, char[][] posicoesLivres, int linha, int coluna) {
         if (g == 0) {
             numeroSolucoes++;
+            //System.out.println(numeroSolucoes);
+            //printTabuleiro(tabuleiro);
             return numeroSolucoes;
         }
 
         for (int i = linha; i < tabuleiro.length; i++) {
             for (int j = coluna; j < tabuleiro.length; j++) {
-                if (tabuleiro[i][j] == '.' && podeColocarGalinha(tabuleiro, i, j)) {
+                if (tabuleiro[i][j] == '.' && posicoesLivres[i][j] != 'X') {
                     tabuleiro[i][j] = 'G';
-                    numeroSolucoes = posicionarGalinhas(g - 1, tabuleiro, numeroSolucoes, i, j);
+                    numeroSolucoes = posicionarGalinhas(g - 1, tabuleiro, numeroSolucoes, posicoesLivres, i, j);
                     tabuleiro[i][j] = '.';
                 }
             }
