@@ -1,5 +1,6 @@
 package main;
 
+import java.math.BigInteger;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -29,7 +30,7 @@ public class NQueensTresPorquinhos {
         Instant before = Instant.now();
         System.out.println(new NQueensTresPorquinhos().run(args));
         Instant after = Instant.now();
-        long delta = Duration.between(before, after).toSeconds();
+        long delta = Duration.between(before, after).toMillis();
         System.out.println("tempo: " + delta);
     }
 
@@ -63,8 +64,7 @@ public class NQueensTresPorquinhos {
      */
     private long posicionarPorquinhos(int p, int g, char[][] tabuleiro, long numeroSolucoes, int linha, int coluna) {
         if (p == 0) {
-            char[][] posicoes = posicoesLivres(tabuleiro);
-            return posicionarGalinhas(g, tabuleiro, numeroSolucoes, posicoes, 0, 0);
+            return posicionarGalinhas(g, numeroSolucoes, posicoesLivres(tabuleiro));
         }
 
         for (int i = linha; i < tabuleiro.length; i++) {
@@ -80,7 +80,7 @@ public class NQueensTresPorquinhos {
         return numeroSolucoes;
     }
 
-    private char[][] posicoesLivres(char[][] tabuleiro) {
+    private int posicoesLivres(char[][] tabuleiro) {
         var posicoes = new char[tabuleiro.length][tabuleiro.length];
 
         for (int i = 0; i < posicoes.length; i++) {
@@ -123,28 +123,34 @@ public class NQueensTresPorquinhos {
                 }
             }
         }
-        //printTabuleiro(posicoes);
-        return posicoes;
-    }
 
-    private long posicionarGalinhas(int g, char[][] tabuleiro, long numeroSolucoes, char[][] posicoesLivres, int linha, int coluna) {
-        if (g == 0) {
-            numeroSolucoes++;
-            //System.out.println(numeroSolucoes);
-            //printTabuleiro(tabuleiro);
-            return numeroSolucoes;
-        }
+        int ocupados = 0;
 
-        for (int i = linha; i < tabuleiro.length; i++) {
-            for (int j = coluna; j < tabuleiro.length; j++) {
-                if (tabuleiro[i][j] == '.' && posicoesLivres[i][j] != 'X') {
-                    tabuleiro[i][j] = 'G';
-                    numeroSolucoes = posicionarGalinhas(g - 1, tabuleiro, numeroSolucoes, posicoesLivres, i, j);
-                    tabuleiro[i][j] = '.';
+        for (int i = 0; i < posicoes.length; i++) {
+            for (int j = 0; j < posicoes.length; j++) {
+                if (posicoes[i][j] == 'X') {
+                    ocupados++;
                 }
             }
-            coluna = 0;
         }
+
+        return tabuleiro.length * tabuleiro.length - ocupados;
+    }
+
+    private BigInteger factorial(BigInteger n) {
+        if (BigInteger.ZERO.equals(n)) {
+            return BigInteger.ONE;
+        }
+        return n.multiply(factorial(n.subtract(BigInteger.ONE)));
+    }
+
+    private long posicionarGalinhas(int g, long numeroSolucoes, int posicoesLivres) {
+        if (g > posicoesLivres) return numeroSolucoes;
+        numeroSolucoes +=
+                factorial(BigInteger.valueOf(posicoesLivres))
+                        .divide(factorial(BigInteger.valueOf(g))
+                                .multiply(factorial(BigInteger.valueOf(posicoesLivres - g))))
+                        .longValueExact();
         return numeroSolucoes;
     }
 
@@ -156,14 +162,5 @@ public class NQueensTresPorquinhos {
             }
         }
         return tabuleiro;
-    }
-
-    private void printTabuleiro(char[][] tabuleiro) {
-        for (char[] chars : tabuleiro) {
-            for (int j = 0; j < tabuleiro.length; j++) {
-                System.out.print(chars[j] + " ");
-            }
-            System.out.println();
-        }
     }
 }
