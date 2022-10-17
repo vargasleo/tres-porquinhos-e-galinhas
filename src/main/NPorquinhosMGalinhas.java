@@ -3,10 +3,10 @@ package main;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-public class NQueensTresPorquinhos {
+public class NPorquinhosMGalinhas {
 
     public static void main(String[] args) {
-        System.out.println(new NQueensTresPorquinhos().run(args));
+        System.out.println(new NPorquinhosMGalinhas().run(args));
     }
 
     private long run(String[] args) {
@@ -15,7 +15,7 @@ public class NQueensTresPorquinhos {
         int min = Math.min(Integer.parseInt(args[1]), Integer.parseInt(args[2]));
         int max = Math.max(Integer.parseInt(args[1]), Integer.parseInt(args[2]));
 
-        return posicionarPorquinhos(min, max, tabuleiro, 0, 0, 0);
+        return posicionarPorquinhos(max, min, tabuleiro, 0, 0, 0);
     }
 
     private long posicionarPorquinhos(int p, int g, char[][] tabuleiro, long numeroSolucoes, int linha, int coluna) {
@@ -61,7 +61,7 @@ public class NQueensTresPorquinhos {
     }
 
     /**
-     * Análise combinatória: Quantas formas diferentes de posicionar G galinhas em N posições livres?
+     * Quantas formas diferentes de posicionar G galinhas em N posições livres?
      * N! / ((N - g)! * g!)
      */
     private long posicionarGalinhas(int g, long numeroSolucoes, int posicoesLivres) {
